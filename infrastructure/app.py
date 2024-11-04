@@ -15,6 +15,8 @@ app = cdk.App()
 InfrastructureStack(
     app,
     "InfrastructureStack",
+    # Specialize this stack for the AWS Account
+    # and Region that are implied by the current CLI configuration.
     env=cdk.Environment(
         account=os.getenv("CDK_DEFAULT_ACCOUNT"), region=os.getenv("CDK_DEFAULT_REGION")
     ),
