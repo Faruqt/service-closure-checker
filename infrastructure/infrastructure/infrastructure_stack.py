@@ -7,9 +7,13 @@ from aws_cdk import (
     Stack,
 )
 from constructs import Construct
+from dotenv import load_dotenv
 
 # local imports
 from infrastructure.dynamo_db.services_table import ServicesTableStack
+
+# load the environment variables
+load_dotenv()
 
 
 class InfrastructureStack(Stack):
