@@ -27,11 +27,15 @@ def service_checker(service_name, table, logger=None):
                 logger.info(f"Service {service_name} not found")
             return {
                 "statusCode": 404,
-                "body": {"message": f"Service {service_name} not found"},
+                "Attributes": {
+                    "service_name": service_name,
+                    "status": "Service not found",
+                    "message": f"Service {service_name} not found",
+                },
             }
 
         # Check if today is in the closed dates
-        closed_dates = response["Item"].get("ClosedDates", [])
+        closed_dates = response["Item"].get("closed_dates", [])
         for item in closed_dates:
             if today == item["date"]:
                 if logger:
@@ -40,9 +44,10 @@ def service_checker(service_name, table, logger=None):
                     )
                 return {
                     "statusCode": 200,
-                    "body": {
+                    "Attributes": {
                         "service_name": service_name,
-                        "status": f"The service {service_name} is closed today for {item['reason']}",
+                        "status": "Closed",
+                        "message": f"The service {service_name} is closed today for {item['reason']}",
                     },
                 }
 
@@ -51,16 +56,36 @@ def service_checker(service_name, table, logger=None):
             logger.info(f"The service {service_name} is open today")
         return {
             "statusCode": 200,
-            "body": {
+            "Attributes": {
                 "service_name": service_name,
-                "status": "The service is open today",
+                "status": "Open",
+                "message": "The service is open today",
             },
         }
 
-    except (ClientError, Exception) as e:
+    except ClientError as e:
+        # Capture detailed error message for AWS-related issues
+        error_message = e.response["Error"].get("Message", str(e))
+        if logger:
+            logger.error(f"ClientError occurred: {error_message}")
+        return {
+            "statusCode": 500,
+            "Attributes": {
+                "service_name": service_name,
+                "status": "Error",
+                "message": "Sorry, we could not process your request. Please try again later.",
+            },
+        }
+
+    except Exception as e:
+        # Generic error handler
         if logger:
             logger.error(f"An error occurred: {str(e)}")
         return {
             "statusCode": 500,
-            "body": {"message": f"An error occurred: {str(e)}"},
+            "Attributes": {
+                "service_name": service_name,
+                "status": "Error",
+                "message": "Sorry, we could not process your request. Please try again later.",
+            },
         }

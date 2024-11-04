@@ -27,7 +27,7 @@ def lambda_handler(event, context):
         context (object): The runtime information of the Lambda function
 
     Returns:
-        dict: The response from the Lambda function
+        dict: The response from the Lambda function, formatted with Attributes for Amazon Connect.
     """
 
     try:
@@ -38,20 +38,23 @@ def lambda_handler(event, context):
             logger.warning("Service name is required but not provided")
             return {
                 "statusCode": 400,
-                "body": {
+                "Attributes": {
                     "message": "Service name is required",
                 },
             }
 
         logger.info(f"Checking status for service: {service_name}")
+
+        # Call the service checker to get the status
         result_map = service_checker(service_name, table, logger)
+
         return result_map
 
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}")
         return {
             "statusCode": 500,
-            "body": {
-                "message": "Sorry we could not process your request, please try again later",
+            "Attributes": {
+                "message": "Sorry, we could not process your request. Please try again later.",
             },
         }
