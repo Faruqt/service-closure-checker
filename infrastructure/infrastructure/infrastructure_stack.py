@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 # local imports
 from infrastructure.dynamo_db.services_table import ServicesTableStack
+from infrastructure.lambdas.lambda_stack import LambdaStack
 
 # load the environment variables
 load_dotenv()
@@ -33,3 +34,12 @@ class InfrastructureStack(Stack):
 
         # Instantiate the ServicesTableStack
         services_table_stack = ServicesTableStack(self, "ServicesTableStack")
+
+        # Instantiate the LambdaStack
+        lambda_stack = LambdaStack(
+            self,
+            "LambdaStack",
+        )
+
+        # Grant the Lambda function read permissions to the DynamoDB table
+        services_table_stack.table.grant_read_data(lambda_stack.lambda_function)
