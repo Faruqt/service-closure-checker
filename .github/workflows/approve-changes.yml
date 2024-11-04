@@ -1,0 +1,60 @@
+name: Approve Infrastructure Changes
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "infrastructure/**"
+      - ".github/workflows/approve_changes.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "infrastructure/**"
+      - ".github/workflows/approve_changes.yml"
+
+jobs:
+  approve_changes:
+    name: Approve Changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Run linter
+        run: |
+          pip install pylint
+          pylint infrastructure/*.py
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          pip install pytest
+          pytest infrastructure/tests
+
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+
+      - name: Create .env file
+        run: |
+          echo "ENVIRONMENT=${{ vars.ENVIRONMENT }}" >> infrastructure/.env
+          echo "LAMBDA_FUNCTION_NAME=${{ vars.LAMBDA_FUNCTION_NAME }}" >> infrastructure/.env
+          echo "EMPLOYEES_TABLE_NAME=${{ vars.EMPLOYEES_TABLE_NAME }}" >> infrastructure/.env
+
+      - name: Approve CDK Changes
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          cd infrastructure
+          cdk diff

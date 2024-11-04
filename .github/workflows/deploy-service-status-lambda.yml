@@ -1,0 +1,50 @@
+name: Deploy Lambda
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "lambda_functions/**"
+      - ".github/workflows/deploy-lambda.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "lambda_functions/**"
+      - ".github/workflows/deploy-lambda.yml"
+jobs:
+  continuous_deployment:
+    name: deploy lambda from source
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout source code
+        uses: actions/checkout@v1
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run linter
+        run: |
+          pip install pylint
+          pylint lambda_functions/service-status/*.py
+
+      - name: zip
+        run: |
+          cd lambda_functions/service-status/
+          zip -r bundle.zip .
+
+      - name: default deploy
+        uses: appleboy/lambda-action@master
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ${{ vars.AWS_REGION }}
+          function_name: "${{ vars.LAMBDA_FUNCTION_NAME}}"
+          zip_file: lambda_functions/service-status/bundle.zip
